@@ -1,7 +1,0 @@
-inputs/*.xlsx
-outputs/
-__pycache__/
-*.pyc
-build_dataset.py
-.claude/
-CLAUDE.md
