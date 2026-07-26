@@ -24,7 +24,39 @@ ROOT = Path(__file__).resolve().parent
 INPUTS = ROOT / "inputs"   # pre-built sample parquets
 OUT = ROOT / "outputs"     # trained models
 
+# zone-code prefix -> country name, for a friendlier "Country (Code)" zone selector
+COUNTRY_NAMES = {
+    "AL": "Albania", "AT": "Austria", "BA": "Bosnia and Herzegovina", "BE": "Belgium",
+    "BG": "Bulgaria", "CH": "Switzerland", "CY": "Cyprus", "CZ": "Czechia",
+    "DE": "Germany", "DK": "Denmark", "DZ": "Algeria", "EE": "Estonia", "EG": "Egypt",
+    "ES": "Spain", "FI": "Finland", "FR": "France", "GE": "Georgia", "GR": "Greece",
+    "HR": "Croatia", "HU": "Hungary", "IE": "Ireland", "IL": "Israel", "IT": "Italy",
+    "LT": "Lithuania", "LU": "Luxembourg", "LV": "Latvia", "LY": "Libya", "MA": "Morocco",
+    "MD": "Moldova", "ME": "Montenegro", "MK": "North Macedonia", "MT": "Malta",
+    "NL": "Netherlands", "NO": "Norway", "PL": "Poland", "PS": "Palestine",
+    "PT": "Portugal", "RO": "Romania", "RS": "Serbia", "SE": "Sweden", "SI": "Slovenia",
+    "SK": "Slovakia", "TN": "Tunisia", "TR": "Turkey", "UA": "Ukraine",
+    "UK": "United Kingdom",
+}
+
+
+def zone_label(z: str) -> str:
+    return f"{COUNTRY_NAMES.get(z[:2], z)} ({z})"
+
 st.set_page_config(page_title="Demand → price models", layout="wide")
+
+loading_placeholder = st.empty()
+loading_placeholder.markdown(
+    """
+    <div style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+                z-index:9999; background:rgba(0,0,0,0.75); color:white;
+                padding:24px 40px; border-radius:12px; font-size:20px;
+                text-align:center;">
+        ⏳ Processing...
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 @st.cache_data
@@ -49,6 +81,7 @@ def load_bundle(name):
 st.title("Price Emulator (Electricity & Hydrogen)")
 st.caption("ENTSO-E TYNDP NT2030 / PLEXOS / CY2009")
 
+st.sidebar.header("Model Selection")
 name = st.sidebar.radio("Commodity", list(COMMODITIES), format_func=str.title)
 cfg = COMMODITIES[name]
 
@@ -63,7 +96,7 @@ api._bundle.cache_clear()  # ensure the API reads the freshly trained bundle
 zones = sorted(bundle["zones"])
 
 default_zone = "NL00" if name == "electricity" else "NL"
-choice = st.sidebar.selectbox("Core point (zone)", zones,
+choice = st.sidebar.selectbox("Selected Study Zone", zones, format_func=zone_label,
                               index=zones.index(default_zone) if default_zone in zones else 0)
 e = bundle["zones"][choice]
 features = e.get("features", bundle["features"])  # this zone's own feature list
@@ -74,12 +107,17 @@ max_price = cfg.get("max_price")
 if max_price is not None:
     d = d[d[target] <= max_price]
 
-st.subheader(f"{name.title()} — {choice}")
+st.subheader(f"{name.title()} — {zone_label(choice)}")
+st.caption("How well the trained model explains historical prices in this zone (5-fold cross-validation).")
 c1, c2, c3 = st.columns(3)
 c1.metric("Samples (demand > 0)", f"{e['n']:,}")
 c2.metric("Cross-validated R²", f"{e['cv_r2']:.3f}")
 c3.metric("Cross-validated RMSE", f"{e['cv_rmse']:.2f} {unit}")
 
+st.subheader("Interactive Price Emulator — Demand → Price")
+st.caption("Pick a demand level for this zone and the model emulates the resulting price, holding "
+          "every other driver (weather, calendar, neighbor-zone conditions) at this zone's "
+          "typical (median) historical value.")
 lo, hi = float(d[demand].min()), float(d[demand].max())
 q = st.slider(f"Demand  (min {lo:,.0f} — max {hi:,.0f})",
              lo, hi if hi > lo else lo + 1.0, float(d[demand].median()))
@@ -88,10 +126,15 @@ st.metric("Emulated price", f"{price:.2f} {unit}")
 
 
 # ---- period comparison: actual vs. model emulation over a chosen date range ----
-st.subheader("Price (Emulator vs. Actual)")
+st.subheader("Historical Validation — Emulated vs. Actual Price")
+st.caption("For the date range you pick, the emulator recomputes price hour-by-hour from that "
+          "hour's real historical conditions, so you can see how closely it tracks the actual "
+          "recorded price over time.")
 
 period_src = df[df["zone"] == choice].copy()
 period_src["datetime"] = pd.to_datetime(period_src["datetime"])
+# data is CY2009 weather mapped onto the NT2030 scenario -- relabel to 2030 for display
+period_src["datetime"] += pd.DateOffset(years=2030 - period_src["datetime"].dt.year.min())
 data_min = period_src["datetime"].min().date()
 data_max = period_src["datetime"].max().date()
 
@@ -139,3 +182,5 @@ chart = alt.Chart(long).mark_line(strokeWidth=1.5).encode(
             "series", alt.Tooltip("price:Q", format=".1f")],
 ).properties(height=350)
 st.altair_chart(chart, width="stretch")
+
+loading_placeholder.empty()
