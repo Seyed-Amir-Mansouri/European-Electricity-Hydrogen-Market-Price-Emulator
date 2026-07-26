@@ -108,19 +108,45 @@ if max_price is not None:
     d = d[d[target] <= max_price]
 
 st.subheader(f"{name.title()} — {zone_label(choice)}")
+st.markdown("#### Trained Model Performance")
 st.caption("How well the trained model explains historical prices in this zone (5-fold cross-validation).")
 c1, c2, c3 = st.columns(3)
 c1.metric("Samples (demand > 0)", f"{e['n']:,}")
 c2.metric("Cross-validated R²", f"{e['cv_r2']:.3f}")
 c3.metric("Cross-validated RMSE", f"{e['cv_rmse']:.2f} {unit}")
 
-st.subheader("Interactive Price Emulator — Demand → Price")
+st.subheader("Forward-Looking Price Outlook")
 st.caption("Pick a demand level for this zone and the model emulates the resulting price, holding "
           "every other driver (weather, calendar, neighbor-zone conditions) at this zone's "
           "typical (median) historical value.")
 lo, hi = float(d[demand].min()), float(d[demand].max())
-q = st.slider(f"Demand  (min {lo:,.0f} — max {hi:,.0f})",
-             lo, hi if hi > lo else lo + 1.0, float(d[demand].median()))
+hi_bound = hi if hi > lo else lo + 1.0
+default_q = float(d[demand].median())
+
+# reset the synced slider/number-input pair whenever the zone or commodity changes,
+# so a stale value from another zone can't fall outside the new min/max bounds
+zone_key = (name, choice)
+if st.session_state.get("_demand_zone_key") != zone_key:
+    st.session_state.demand_slider = default_q
+    st.session_state.demand_number = default_q
+    st.session_state._demand_zone_key = zone_key
+
+
+def _sync_from_slider():
+    st.session_state.demand_number = st.session_state.demand_slider
+
+
+def _sync_from_number():
+    st.session_state.demand_slider = st.session_state.demand_number
+
+
+col_slider, col_num = st.columns([3, 1])
+col_slider.slider(f"Demand  (min {lo:,.0f} — max {hi_bound:,.0f})", lo, hi_bound,
+                  key="demand_slider", on_change=_sync_from_slider)
+col_num.number_input("Type demand", min_value=lo, max_value=hi_bound,
+                     key="demand_number", on_change=_sync_from_number)
+
+q = st.session_state.demand_slider
 price = api.electricity_price(choice, q) if name == "electricity" else api.hydrogen_price(choice, q)
 st.metric("Emulated price", f"{price:.2f} {unit}")
 
