@@ -47,12 +47,17 @@ st.set_page_config(page_title="Demand → price models", layout="wide")
 
 st.html("""
 <style>
-.st-key-section_model, .st-key-section_emulator, .st-key-section_history {
+.st-key-section_header, .st-key-section_model, .st-key-section_emulator, .st-key-section_history {
     background: rgba(127, 127, 127, 0.08);
     border: 1px solid rgba(127, 127, 127, 0.25);
     border-radius: 14px;
     padding: 1.2rem 1.5rem 1.5rem;
     margin-bottom: 1.2rem;
+}
+.st-key-section_header {
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
 }
 </style>
 """)
@@ -119,8 +124,16 @@ max_price = cfg.get("max_price")
 if max_price is not None:
     d = d[d[target] <= max_price]
 
+with st.container(key="section_header"):
+    st.markdown(
+        f"""<div style="text-align:center;">
+        <h3 style="margin:0;">Commodity: {name.title()}</h3>
+        <h3 style="margin:0;">Zone: {zone_label(choice)}</h3>
+        </div>""",
+        unsafe_allow_html=True,
+    )
+
 with st.container(key="section_model"):
-    st.subheader(f"{name.title()} — {zone_label(choice)}")
     st.markdown("#### Trained Model Performance")
     st.caption("How well the trained model explains historical prices in this zone (5-fold cross-validation).")
     c1, c2, c3 = st.columns(3)
@@ -213,7 +226,8 @@ with st.container(key="section_history"):
 
     chart = alt.Chart(long).mark_line(strokeWidth=1.5).encode(
         x=alt.X("datetime:T", title="Date"),
-        y=alt.Y("price:Q", title=f"Price [{unit}]", scale=y_scale),
+        y=alt.Y("price:Q", title=f"Price [{unit}]", scale=y_scale,
+                axis=alt.Axis(titlePadding=10)),
         color=alt.Color("series:N", sort=series_order, scale=color_scale,
                         legend=alt.Legend(title=None, orient="top")),
         tooltip=[alt.Tooltip("datetime:T", title="Date/hour"),
