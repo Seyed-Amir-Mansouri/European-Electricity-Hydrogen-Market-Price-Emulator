@@ -1,0 +1,164 @@
+{
+ "AT": [
+  "DE",
+  "IBIT",
+  "SI",
+  "SK"
+ ],
+ "DE": [
+  "AT",
+  "BE",
+  "CZ",
+  "DK",
+  "FR",
+  "IBFI",
+  "NL",
+  "PL",
+  "XAmmonia",
+  "XNO"
+ ],
+ "IBIT": [
+  "AT",
+  "CH",
+  "IT"
+ ],
+ "SI": [
+  "AT",
+  "HR",
+  "HU",
+  "IT"
+ ],
+ "SK": [
+  "AT",
+  "CZ",
+  "HU",
+  "XUA"
+ ],
+ "BE": [
+  "DE",
+  "FR",
+  "LU",
+  "NL",
+  "UK",
+  "XAmmonia",
+  "XNO"
+ ],
+ "FR": [
+  "BE",
+  "DE",
+  "ES",
+  "XAmmonia"
+ ],
+ "LU": [
+  "BE"
+ ],
+ "NL": [
+  "BE",
+  "DE",
+  "XAmmonia"
+ ],
+ "UK": [
+  "BE"
+ ],
+ "BG": [
+  "GR",
+  "RO"
+ ],
+ "GR": [
+  "BG"
+ ],
+ "RO": [
+  "BG",
+  "HU",
+  "XUA"
+ ],
+ "CH": [
+  "IBIT"
+ ],
+ "CZ": [
+  "DE",
+  "SK"
+ ],
+ "DK": [
+  "DE"
+ ],
+ "IBFI": [
+  "DE",
+  "FI",
+  "SE"
+ ],
+ "PL": [
+  "DE",
+  "LT"
+ ],
+ "EE": [
+  "FI",
+  "LV"
+ ],
+ "FI": [
+  "EE",
+  "IBFI",
+  "SE"
+ ],
+ "LV": [
+  "EE",
+  "LT"
+ ],
+ "ES": [
+  "FR",
+  "IT",
+  "PT",
+  "XDZ",
+  "XMA"
+ ],
+ "IT": [
+  "ES",
+  "IBIT",
+  "SI",
+  "XDZ"
+ ],
+ "PT": [
+  "ES"
+ ],
+ "SE": [
+  "FI",
+  "IBFI"
+ ],
+ "HR": [
+  "HU",
+  "SI"
+ ],
+ "HU": [
+  "HR",
+  "RO",
+  "SI",
+  "SK",
+  "XUA"
+ ],
+ "LT": [
+  "LV",
+  "PL"
+ ],
+ "XAmmonia": [
+  "BE",
+  "DE",
+  "FR",
+  "NL"
+ ],
+ "XDZ": [
+  "ES",
+  "IT"
+ ],
+ "XMA": [
+  "ES"
+ ],
+ "XNO": [
+  "BE",
+  "DE"
+ ],
+ "XUA": [
+  "HU",
+  "RO",
+  "SK"
+ ]
+}

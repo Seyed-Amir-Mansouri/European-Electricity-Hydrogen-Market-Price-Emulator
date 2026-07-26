@@ -20,6 +20,7 @@ import pandas as pd
 
 from price_model.config import COMMODITIES
 from price_model.multivariate import train_all
+from price_model.neighbors import load_adjacency
 
 ROOT = Path(__file__).resolve().parent
 INPUTS = ROOT / "inputs"   # pre-built sample parquets ship here (skip build_dataset)
@@ -33,6 +34,7 @@ def _metrics_frame(bundle: dict) -> pd.DataFrame:
         rows.append({
             "zone": zone, "cv_r2": round(e["cv_r2"], 4),
             "cv_rmse": round(e["cv_rmse"], 2), "n": e["n"],
+            "neighbor_price_method": e.get("neighbor_price_method", ""),
             "top_features": ", ".join(f"{k} ({v:.1f})" for k, v in top),
         })
     return pd.DataFrame(rows).sort_values("cv_r2", ascending=False)
@@ -50,14 +52,21 @@ def train_commodity(name: str) -> None:
     cfg = COMMODITIES[name]
     OUT.mkdir(parents=True, exist_ok=True)
     df = pd.read_parquet(INPUTS / cfg["samples"])
+    adjacency = load_adjacency(INPUTS / cfg["adjacency"])
     bundle = train_all(df, name, cfg["target"], cfg["features"],
-                       cfg["demand"], cfg["unit"])
+                       cfg["demand"], cfg["unit"], adjacency=adjacency,
+                       net_demand_col=cfg.get("net_demand_col"),
+                       max_price=cfg.get("max_price"))
     joblib.dump(bundle, OUT / cfg["model"])
     metrics = _metrics_frame(bundle)
     metrics.to_csv(OUT / cfg["metrics"], index=False)
 
     print(f"\n=== {name.upper()}  ({cfg['demand']} -> {cfg['target']}, {cfg['unit']}) ===")
-    print("features:", ", ".join(cfg["features"]))
+    net = cfg.get("net_demand_col")
+    extra = "+ per-zone neighbor_demand_*/neighbor_demand_total/demand_system_total"
+    if net:
+        extra += " AND neighbor_net_demand_*/neighbor_net_demand_total/net_demand_system_total"
+    print("base features:", ", ".join(cfg["features"]), extra)
     print(_summary(bundle))
     print(f"wrote {cfg['model']}, {cfg['metrics']}")
     with pd.option_context("display.max_rows", None, "display.width", 140):

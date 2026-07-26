@@ -52,9 +52,10 @@ def _price(commodity: str, zone: str, demand, context: dict):
             f"No {commodity} model for zone {zone!r}. "
             f"Available: {', '.join(available_zones(commodity))}"
         )
-    features = bundle["features"]
+    entry = bundle["zones"][zone]
+    features = entry.get("features", bundle["features"])
     demand_col = bundle["demand"]
-    medians = bundle["zones"][zone]["medians"]
+    medians = entry["medians"]
 
     unknown = set(context) - set(features)
     if unknown:

@@ -29,6 +29,21 @@ features, one row per (zone, hour). Two sheets, two tables:
     smr               Steam methane reformer             }
     storage           H2 storage discharge - charge      }
     balance/dumped/hns                                   } net position / spill / unserved
+    elec_price        demand-weighted electricity price  } cross-commodity + trade context
+    h2_net_trade      Crossborder H2 exchanges, +import   }   (from two extra sheets)
+
+Both tables also carry ``month`` (1-12), ``season`` (0=DJF winter .. 3=SON autumn), and the
+absolute ``hour`` (0-8735, unique per row) -- all derived from ``datetime``/row position in
+``_assemble``. These are cheap calendar/time context that consistently improved
+cross-validated R^2 in testing (see ``config.py``).
+
+``elec_price`` is the electrolysis feedstock cost: electricity zones share the H2 zone's
+2-letter country prefix (e.g. ``IT`` <- ``ITCA/ITCN/.../ITSI``), combined with a
+demand-weighted mean since several countries have multiple bidding zones.
+``h2_net_trade`` sums the ``Crossborder H2 exchanges`` sheet's ``X->Y`` link flows into a
+net import(+)/export(-) position per zone-hour. There is no fuel/gas price anywhere in
+this workbook (checked every sheet) so an SMR feedstock-cost feature isn't derivable from
+this source.
 
 A single streaming pass per sheet with openpyxl (read-only) keeps memory bounded.
 """
@@ -138,6 +153,8 @@ def _stream(xlsx_path, sheet, classify, groups, strip_suffix=""):
 
 def _assemble(zones, nrows, accum, groups, year):
     dt = pd.date_range(f"{year}-01-01", periods=nrows, freq="h")
+    month = dt.month.to_numpy()
+    season = (dt.month.to_numpy() % 12) // 3  # 0=DJF winter, 1=MAM spring, 2=JJA summer, 3=SON autumn
     frames = []
     for z in zones:
         d = {g: accum[z][g][:nrows] for g in groups}
@@ -145,6 +162,8 @@ def _assemble(zones, nrows, accum, groups, year):
         df.insert(0, "zone", z)
         df.insert(1, "hour", np.arange(nrows, dtype="int32"))
         df.insert(2, "datetime", dt)
+        df.insert(3, "month", month)
+        df.insert(4, "season", season)
         frames.append(df)
     return pd.concat(frames, ignore_index=True)
 
@@ -158,11 +177,113 @@ def extract_electricity(xlsx_path: str | Path = DEFAULT_XLSX, year: int = 2009) 
     return feat
 
 
-def extract_hydrogen(xlsx_path: str | Path = DEFAULT_XLSX, year: int = 2009) -> pd.DataFrame:
-    """Return the per-(zone, hour) hydrogen feature table (zone codes stripped of _H2)."""
+def _country_elec_price(elec: pd.DataFrame) -> pd.DataFrame:
+    """Demand-weighted electricity price per (2-letter country prefix, hour).
+
+    Electricity zone codes share the H2 zone's 2-letter country prefix (``ITCA`` ->
+    ``IT``, ``SE01`` -> ``SE``, ...). Countries with several bidding zones are combined
+    with a demand-weighted mean so each H2 country gets a single electrolysis feedstock
+    price per hour; hours where every mapped zone has zero demand fall back to a plain
+    mean so the weight never divides by zero.
+    """
+    e = elec[["zone", "hour", "demand", "price_eur_mwh"]].copy()
+    e["country"] = e["zone"].str[:2]
+    w = e["demand"].clip(lower=0)
+    num = (e["price_eur_mwh"] * w).groupby([e["country"], e["hour"]]).sum()
+    den = w.groupby([e["country"], e["hour"]]).sum()
+    weighted = num / den
+    fallback = e["price_eur_mwh"].groupby([e["country"], e["hour"]]).mean()
+    price = weighted.where(den > 0, fallback).rename("elec_price")
+    return price.reset_index().rename(columns={"country": "zone"})
+
+
+def extract_h2_exchange(xlsx_path: str | Path = DEFAULT_XLSX) -> pd.DataFrame:
+    """Net H2 cross-border trade per (zone, hour): +import / -export [MWH2].
+
+    The ``Crossborder H2 exchanges`` sheet has one column per directed link
+    (``AT_H2->DE_H2``, ...); a positive value is flow from the first zone to the second.
+    Summed per zone this gives a net trade position, including flows to/from the virtual
+    ``XAmmonia``/``XDZ``/``XMA``/``XNO``/``XUA`` import nodes (kept as extra unused rows;
+    they never match a real H2 zone code).
+    """
+    wb = openpyxl.load_workbook(xlsx_path, read_only=True, data_only=True)
+    ws = wb["Crossborder H2 exchanges"]
+    HEADER_ROW, FIRST_DATA_ROW = 10, 11
+    links: list[tuple[int, str, str]] = []
+    accum: dict[str, np.ndarray] = {}
+    nrows = 0
+    for i, row in enumerate(ws.iter_rows(values_only=True)):
+        if i == HEADER_ROW:
+            for j in range(2, len(row)):
+                col = row[j]
+                if col is None or "->" not in str(col):
+                    continue
+                src, dst = str(col).split("->")
+                src, dst = src.replace("_H2", "").strip(), dst.replace("_H2", "").strip()
+                links.append((j, src, dst))
+                accum.setdefault(src, np.zeros(MAXROWS))
+                accum.setdefault(dst, np.zeros(MAXROWS))
+        elif i >= FIRST_DATA_ROW:
+            if row[0] is None:
+                break
+            for j, src, dst in links:
+                v = row[j]
+                if v is not None:
+                    accum[dst][nrows] += v
+                    accum[src][nrows] -= v
+            nrows += 1
+    wb.close()
+    frames = [
+        pd.DataFrame({"zone": z, "hour": np.arange(nrows, dtype="int32"),
+                      "h2_net_trade": accum[z][:nrows]})
+        for z in sorted(accum)
+    ]
+    return pd.concat(frames, ignore_index=True)
+
+
+def extract_adjacency(xlsx_path: str | Path, sheet: str, strip: str = "") -> dict[str, list[str]]:
+    """Undirected zone adjacency from a Crossborder-exchanges-style sheet's header row.
+
+    The header (row 10) has one column per directed link (e.g. ``FR00->DE00``); each
+    link makes both endpoints neighbours of each other regardless of which direction
+    is named. Used for ``Crossborder exchanges`` (electricity) and
+    ``Crossborder H2 exchanges`` (hydrogen, ``strip="_H2"``).
+    """
+    wb = openpyxl.load_workbook(xlsx_path, read_only=True, data_only=True)
+    ws = wb[sheet]
+    adj: dict[str, set[str]] = {}
+    for row in ws.iter_rows(min_row=11, max_row=11, values_only=True):
+        for col in row[2:]:
+            if col is None or "->" not in str(col):
+                continue
+            a, b = str(col).split("->")
+            a, b = a.replace(strip, "").strip(), b.replace(strip, "").strip()
+            adj.setdefault(a, set()).add(b)
+            adj.setdefault(b, set()).add(a)
+    wb.close()
+    return {z: sorted(n) for z, n in adj.items()}
+
+
+def extract_hydrogen(xlsx_path: str | Path = DEFAULT_XLSX, year: int = 2009,
+                      elec_df: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Return the per-(zone, hour) hydrogen feature table (zone codes stripped of _H2).
+
+    Adds ``elec_price`` (electrolysis feedstock cost, from ``elec_df`` or a fresh
+    ``extract_electricity`` pass) and ``h2_net_trade`` (from the crossborder sheet).
+    """
     zones, n, accum = _stream(xlsx_path, "Hourly H2 Data", _classify_h2, H2_GROUPS,
                               strip_suffix="_H2")
-    return _assemble(zones, n, accum, H2_GROUPS, year)
+    feat = _assemble(zones, n, accum, H2_GROUPS, year)
+
+    if elec_df is None:
+        elec_df = extract_electricity(xlsx_path, year)
+    feat = feat.merge(_country_elec_price(elec_df), on=["zone", "hour"], how="left")
+
+    trade = extract_h2_exchange(xlsx_path)
+    feat = feat.merge(trade, on=["zone", "hour"], how="left")
+    feat["h2_net_trade"] = feat["h2_net_trade"].fillna(0.0)
+
+    return feat
 
 
 if __name__ == "__main__":  # smoke test
