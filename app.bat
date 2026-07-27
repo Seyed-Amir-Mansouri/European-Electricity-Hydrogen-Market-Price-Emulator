@@ -35,15 +35,21 @@ if errorlevel 1 (
 
 rem --- 3. Trained models: train only if missing. Sample data already ships in inputs/, ---
 rem ---    so build_dataset.py (which regenerates it from the raw workbook) is never run. ---
-if exist "outputs\electricity_model.joblib" if exist "outputs\hydrogen_model.joblib" (
-    echo [app.bat] Trained models found in outputs\, skipping training.
-) else (
+set "MODELS_MISSING=0"
+if not exist "outputs\electricity_model.joblib" set "MODELS_MISSING=1"
+if not exist "outputs\hydrogen_model.joblib" set "MODELS_MISSING=1"
+
+if "%MODELS_MISSING%"=="1" (
     echo [app.bat] Trained models missing, training from committed sample data ...
+    echo [app.bat] This can take ~45-50 minutes ^(electricity ~40 min, hydrogen ~7 min^). Please wait ...
     "%PY%" train_model.py
     if errorlevel 1 (
         echo [app.bat] ERROR: training failed.
         exit /b 1
     )
+    echo [app.bat] Training complete.
+) else (
+    echo [app.bat] Trained models found in outputs\, skipping training.
 )
 
 rem --- 4. Launch the app ---
