@@ -37,7 +37,20 @@ outputs/             # trained models + metrics (git-ignored)
 
 ## Installation
 
-### Local (Python)
+### Windows (recommended)
+
+Double-click `app.bat`, or run it from a shell:
+
+```bash
+app.bat
+```
+
+It creates a local `.venv`, installs `requirements.txt`, trains the models if
+`outputs/*.joblib` aren't present yet (from the committed sample parquets — no need to run
+`build_dataset.py`), and launches the Streamlit app. Safe to re-run: it skips any step
+that's already done.
+
+### Local (Python, manual)
 
 Dependencies are listed in `requirements.txt`:
 
@@ -72,6 +85,8 @@ available_zones("hydrogen")
 ```
 
 ### Streamlit app
+
+`app.bat` (see Installation above) handles this end-to-end. To run it manually instead:
 
 ```bash
 streamlit run app.py
