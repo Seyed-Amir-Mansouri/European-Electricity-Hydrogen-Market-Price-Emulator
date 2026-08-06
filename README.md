@@ -14,7 +14,9 @@ curve.
 
 - Python API — `electricity_price(zone, demand, **ctx)` / `hydrogen_price(zone, h2_demand, **ctx)`
 - Demand is the only required argument; every other feature defaults to that zone's median
-- Interactive Django web app to explore accuracy and the demand → price curve per zone
+- Interactive Django web app — commodity/zone picker, cross-validated accuracy, and an
+  hour-by-hour actual-vs-emulated historical price chart per zone; `app.bat` launches it
+  and opens your browser automatically
 - Dockerfile for a self-contained, runnable version of the app
 
 ## Project structure
@@ -33,7 +35,11 @@ train_model.py       # sample parquets -> outputs/*_model.joblib + *_metrics.csv
 webui/               # Django web app
   manage.py
   priceui/           # project config (settings, urls)
-  pricing/            # app: views, JSON API, templates, static (incl. vendored Chart.js)
+  pricing/           # app
+    services.py       # data loading/caching + prediction glue (mirrors old app.py logic)
+    views.py            # index page + JSON API (zones / metrics / history)
+    templates/pricing/index.html
+    static/pricing/     # css + vanilla JS (no build step) + vendored Chart.js
 
 inputs/              # sample parquets + adjacency JSONs (committed), raw workbook (git-ignored)
 outputs/             # trained models + metrics (git-ignored)
@@ -90,13 +96,24 @@ available_zones("hydrogen")
 
 ### Django app
 
-`app.bat` (see Installation above) handles this end-to-end. To run it manually instead:
+`app.bat` (see Installation above) handles this end-to-end — it also opens
+`http://127.0.0.1:8000/` in your browser once the server is up. To run it manually
+instead:
 
 ```bash
 python webui/manage.py runserver
 ```
 
-Pick a commodity and zone to see cross-validated accuracy and the demand → price curve.
+Pick a commodity (electricity/hydrogen) and a zone to see:
+
+- **Trained Model Performance** — sample count, cross-validated R², cross-validated RMSE
+- **Historical Validation** — an hour-by-hour Actual vs. Emulated price chart for a date
+  range you pick, with an autoscale toggle for the Y axis
+
+The frontend is plain HTML/CSS/JS (no npm/build step) calling a small JSON API —
+`/api/zones/<commodity>/`, `/api/metrics/<commodity>/<zone>/`,
+`/api/history/<commodity>/<zone>/` — and charts with a locally vendored Chart.js, so the
+app works fully offline (no CDN dependency).
 
 ### Training pipeline
 

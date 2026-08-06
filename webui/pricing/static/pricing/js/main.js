@@ -35,6 +35,9 @@
     function hideError() {
         el.errorBanner.classList.add("hidden");
         el.appBody.classList.remove("hidden");
+        // the canvas was measured at 0x0 while app-body was display:none; force a
+        // remeasure now that it's visible, or Chart.js keeps drawing into a 0x0 area.
+        if (chart) chart.resize();
     }
 
     function showHistoryError(msg) {
@@ -88,7 +91,6 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 animation: false,
-                parsing: false,
                 scales: {
                     x: {
                         type: "time",

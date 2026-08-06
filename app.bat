@@ -53,6 +53,7 @@ if "%MODELS_MISSING%"=="1" (
 
 rem --- 4. Launch the app ---
 echo [app.bat] Starting Django app at http://127.0.0.1:8000/ ...
+start "" "http://127.0.0.1:8000/"
 "%PY%" webui\manage.py runserver 127.0.0.1:8000
 
 endlocal
