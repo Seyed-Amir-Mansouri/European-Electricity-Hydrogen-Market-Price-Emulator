@@ -1,0 +1,92 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Demand → price models</title>
+    <link rel="stylesheet" href="{% static 'pricing/css/style.css' %}">
+</head>
+<body>
+
+<div id="loading-overlay" class="loading-overlay">⏳ Processing...</div>
+
+<div class="page">
+    <h1 class="title">Price Emulator (Electricity &amp; Hydrogen)</h1>
+    <p class="caption">ENTSO-E TYNDP NT2030 / PLEXOS / CY2009</p>
+
+    <div id="error-banner" class="error-banner hidden"></div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label class="control-title">Commodity</label>
+            <div class="radio-group" id="commodity-group">
+                {% for c in commodities %}
+                <label>
+                    <input type="radio" name="commodity" value="{{ c }}" {% if forloop.first %}checked{% endif %}>
+                    {{ c|title }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-title" for="zone-select">Selected Study Zone</label>
+            <select id="zone-select"></select>
+        </div>
+    </div>
+
+    <div id="app-body" class="hidden">
+        <div class="card header-card">
+            <h3 id="header-commodity">Commodity:</h3>
+            <h3 id="header-zone">Zone:</h3>
+        </div>
+
+        <div class="card">
+            <h4>Trained Model Performance</h4>
+            <p class="caption">How well the trained model explains historical prices in this zone (5-fold cross-validation).</p>
+            <div class="metrics-row">
+                <div class="metric">
+                    <div class="label">Samples (demand &gt; 0)</div>
+                    <div class="value" id="metric-n">–</div>
+                </div>
+                <div class="metric">
+                    <div class="label">Cross-validated R²</div>
+                    <div class="value" id="metric-r2">–</div>
+                </div>
+                <div class="metric">
+                    <div class="label">Cross-validated RMSE</div>
+                    <div class="value" id="metric-rmse">–</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h4>Historical Validation — Emulated vs. Actual Price</h4>
+            <p class="caption">For the date range you pick, the emulator recomputes price hour-by-hour from that
+                hour's real historical conditions, so you can see how closely it tracks the actual
+                recorded price over time.</p>
+
+            <div class="history-controls">
+                <div class="date-range">
+                    <label for="date-start">Date range</label>
+                    <input type="date" id="date-start">
+                    <span>–</span>
+                    <input type="date" id="date-end">
+                </div>
+                <div class="checkbox-row">
+                    <input type="checkbox" id="autoscale">
+                    <label for="autoscale">Autoscale Y axis</label>
+                </div>
+            </div>
+            <div id="history-error" class="error-banner hidden"></div>
+            <div class="chart-wrap">
+                <canvas id="history-chart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'pricing/js/chart.umd.min.js' %}"></script>
+<script src="{% static 'pricing/js/chartjs-adapter-date-fns.bundle.min.js' %}"></script>
+<script src="{% static 'pricing/js/main.js' %}"></script>
+</body>
+</html>

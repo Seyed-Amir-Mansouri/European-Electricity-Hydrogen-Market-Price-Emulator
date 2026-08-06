@@ -14,7 +14,7 @@ curve.
 
 - Python API — `electricity_price(zone, demand, **ctx)` / `hydrogen_price(zone, h2_demand, **ctx)`
 - Demand is the only required argument; every other feature defaults to that zone's median
-- Interactive Streamlit app to explore accuracy, feature importances, and the demand → price curve per zone
+- Interactive Django web app to explore accuracy and the demand → price curve per zone
 - Dockerfile for a self-contained, runnable version of the app
 
 ## Project structure
@@ -29,7 +29,11 @@ price_model/
 
 build_dataset.py    # raw workbook -> outputs/{elec,h2}_samples.parquet (maintainer-only)
 train_model.py       # sample parquets -> outputs/*_model.joblib + *_metrics.csv
-app.py               # Streamlit app
+
+webui/               # Django web app
+  manage.py
+  priceui/           # project config (settings, urls)
+  pricing/            # app: views, JSON API, templates, static (incl. vendored Chart.js)
 
 inputs/              # sample parquets + adjacency JSONs (committed), raw workbook (git-ignored)
 outputs/             # trained models + metrics (git-ignored)
@@ -47,8 +51,8 @@ app.bat
 
 It creates a local `.venv`, installs `requirements.txt`, trains the models if
 `outputs/*.joblib` aren't present yet (from the committed sample parquets — no need to run
-`build_dataset.py`), and launches the Streamlit app. Safe to re-run: it skips any step
-that's already done.
+`build_dataset.py`), and launches the Django app at `http://127.0.0.1:8000/`. Safe to
+re-run: it skips any step that's already done.
 
 ### Local (Python, manual)
 
@@ -62,10 +66,10 @@ pip install -r requirements.txt
 
 ```bash
 docker build -t price-model .
-docker run -p 8501:8501 price-model
+docker run -p 8000:8000 price-model
 ```
 
-Then open `http://localhost:8501`.
+Then open `http://localhost:8000`.
 
 ## Usage
 
@@ -84,16 +88,15 @@ available_zones("electricity")
 available_zones("hydrogen")
 ```
 
-### Streamlit app
+### Django app
 
 `app.bat` (see Installation above) handles this end-to-end. To run it manually instead:
 
 ```bash
-streamlit run app.py
+python webui/manage.py runserver
 ```
 
-Pick a commodity and zone to see cross-validated accuracy, feature importances,
-predicted-vs-actual, and the demand → price curve.
+Pick a commodity and zone to see cross-validated accuracy and the demand → price curve.
 
 ### Training pipeline
 
