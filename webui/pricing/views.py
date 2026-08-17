@@ -58,3 +58,45 @@ def api_history(request, commodity, zone):
     except ValueError as exc:
         return JsonResponse({"error": str(exc)}, status=400)
     return JsonResponse(data)
+
+
+def _parse_month(request):
+    try:
+        month = int(request.GET.get("month"))
+    except (TypeError, ValueError):
+        raise ValueError("Query param 'month' must be an integer 1-12.")
+    if not 1 <= month <= 12:
+        raise ValueError("Query param 'month' must be an integer 1-12.")
+    return month
+
+
+def api_monthly_demand_curve(request, commodity, zone):
+    if commodity not in COMMODITIES:
+        return JsonResponse({"error": f"Unknown commodity {commodity!r}."}, status=404)
+    bundle = services.load_bundle(commodity)
+    if zone not in bundle["zones"]:
+        return JsonResponse({"error": f"Unknown zone {zone!r} for {commodity}."}, status=404)
+
+    try:
+        month = _parse_month(request)
+        data = services.monthly_demand_curve(commodity, zone, month)
+    except ValueError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+    return JsonResponse(data)
+
+
+def api_monthly_price_curve(request, commodity, zone):
+    if commodity not in COMMODITIES:
+        return JsonResponse({"error": f"Unknown commodity {commodity!r}."}, status=404)
+    bundle = services.load_bundle(commodity)
+    if zone not in bundle["zones"]:
+        return JsonResponse({"error": f"Unknown zone {zone!r} for {commodity}."}, status=404)
+
+    try:
+        month = _parse_month(request)
+        demand_str = request.GET.get("demand", "")
+        demand_values = [float(v) for v in demand_str.split(",")]
+        data = services.predict_hourly_curve(commodity, zone, month, demand_values)
+    except ValueError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+    return JsonResponse(data)

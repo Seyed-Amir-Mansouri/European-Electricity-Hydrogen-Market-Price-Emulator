@@ -60,7 +60,7 @@
         </div>
 
         <div class="card">
-            <h4>Historical Validation — Emulated vs. Actual Price</h4>
+            <h4>Validation — Emulated vs. Actual Price</h4>
             <p class="caption">For the date range you pick, the emulator recomputes price hour-by-hour from that
                 hour's real historical conditions, so you can see how closely it tracks the actual
                 recorded price over time.</p>
@@ -81,6 +81,33 @@
             <div class="chart-wrap">
                 <canvas id="history-chart"></canvas>
             </div>
+        </div>
+
+        <div class="card">
+            <h4>Future Analysis</h4>
+            <p class="caption">Pick a month to see this zone's typical 24-hour demand shape. Drag any point to
+                test a different demand at that hour -- the price chart below recomputes when you release it,
+                with every other driver shifting using its real relationship to demand.</p>
+
+            <div class="month-select-row">
+                <button type="button" id="reset-curve-btn" class="reset-btn">Reset Values</button>
+                <label for="month-select">Month</label>
+                <select id="month-select"></select>
+            </div>
+
+            <div id="curve-error" class="error-banner hidden"></div>
+
+            <h5 class="chart-title">Demand [<span id="curve-demand-unit">MW</span>]</h5>
+            <div id="hour-steppers" class="hour-steppers"></div>
+            <div class="chart-wrap chart-wrap-curve">
+                <canvas id="demand-curve-chart"></canvas>
+            </div>
+
+            <h5 class="chart-title">Estimated Price [<span id="curve-price-unit">EUR/MWh</span>]</h5>
+            <div class="chart-wrap chart-wrap-curve">
+                <canvas id="price-curve-chart"></canvas>
+            </div>
+
         </div>
     </div>
 </div>

@@ -9,6 +9,8 @@
     --accent-2: #eb6834;
     --error-bg: #fdecea;
     --error-fg: #611a15;
+    --range-ok: #2ba84a;
+    --range-warn: #d6453f;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -18,6 +20,8 @@
         --muted: #a0a0a0;
         --error-bg: #3a1f1c;
         --error-fg: #ffb4a8;
+        --range-ok: #3fc463;
+        --range-warn: #ef5b54;
     }
 }
 
@@ -25,6 +29,7 @@
 
 body {
     margin: 0;
+    overflow-x: hidden;
     font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     color: var(--fg);
     background: var(--bg);
@@ -105,6 +110,30 @@ select, input[type="date"] {
 
 .card h4 { margin: 0 0 0.25rem; }
 
+.card-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.card-header-row h4 { margin: 0; }
+
+.reset-btn {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.35rem 0.8rem;
+    border-radius: 8px;
+    border: 1px solid var(--card-border);
+    background: var(--card-bg);
+    color: var(--fg);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.reset-btn:hover { background: var(--card-border); }
+
 .metrics-row {
     display: flex;
     gap: 2rem;
@@ -158,6 +187,78 @@ select, input[type="date"] {
     padding: 0.9rem 1.2rem;
     margin-bottom: 1.2rem;
 }
+
+.month-select-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0.5rem 0 1.2rem;
+}
+
+.month-select-row label {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.chart-title {
+    margin: 0 0 0.4rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+}
+
+.chart-wrap-curve {
+    position: relative;
+    height: 280px;
+    margin-bottom: 1.6rem;
+    touch-action: none;
+}
+
+.hour-steppers {
+    position: relative;
+    height: 78px;
+    margin-bottom: 0.3rem;
+}
+
+.hour-stepper {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+}
+
+.hour-stepper .hour-label {
+    font-size: 0.65rem;
+    color: var(--muted);
+}
+
+.hour-stepper .hour-delta {
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+.hour-stepper .hour-delta.positive { color: var(--range-ok); }
+.hour-stepper .hour-delta.negative { color: var(--range-warn); }
+
+.step-btn {
+    width: 1.3rem;
+    height: 1.3rem;
+    line-height: 1;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 5px;
+    border: 1px solid var(--card-border);
+    background: var(--bg);
+    color: var(--fg);
+    cursor: pointer;
+    padding: 0;
+}
+
+.step-btn:hover { background: var(--card-border); }
 
 .hidden { display: none !important; }
 
