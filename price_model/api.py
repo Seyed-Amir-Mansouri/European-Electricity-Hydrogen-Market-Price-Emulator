@@ -46,7 +46,12 @@ def available_zones(commodity: str) -> list[str]:
 
 
 def _price(commodity: str, zone: str, demand, context: dict):
-    bundle = _bundle(commodity)
+    return price_from_bundle(_bundle(commodity), commodity, zone, demand, context)
+
+
+def price_from_bundle(bundle: dict, commodity: str, zone: str, demand, context: dict):
+    """Same as ``_price`` but against an already-loaded bundle, so a caller holding
+    its own cached bundle (e.g. the webui) doesn't load a second copy from disk."""
     if zone not in bundle["zones"]:
         raise KeyError(
             f"No {commodity} model for zone {zone!r}. "
@@ -67,7 +72,6 @@ def _price(commodity: str, zone: str, demand, context: dict):
     row[demand_col] = demand
     for k, v in context.items():
         row[k] = np.full(n, float(v)) if np.isscalar(v) else np.asarray(v, float)
-    # residual_load is derived; recompute it if the model uses it and it wasn't given.
     if "residual_load" in features and "residual_load" not in context:
         row["residual_load"] = row[demand_col] - row.get("wind", 0) - row.get("solar", 0)
 

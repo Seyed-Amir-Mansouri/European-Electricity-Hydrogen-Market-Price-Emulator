@@ -17,7 +17,7 @@ sys.path.insert(0, str(REPO_ROOT))                          # make `price_model`
 SECRET_KEY = "django-insecure-price-model-webui-local-only"
 
 DEBUG = True
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["*", "100.102.1.8"]
 
 INSTALLED_APPS = [
     "django.contrib.staticfiles",
