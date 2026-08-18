@@ -34,6 +34,15 @@
     const DEMAND_BOUND_IDX = { upper: 0, lower: 1, representative: 2, modified: 3 };
     const DEMAND_STEP_MW = 20;
 
+    const PREFERS_DARK = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const THEME = PREFERS_DARK
+        ? { blue: "#3987e5", orange: "#e07038", red: "#e66767", neutral: "#8b92ab", bound: "rgba(57, 135, 229, 0.16)" }
+        : { blue: "#2a78d6", orange: "#c74e1f", red: "#e34948", neutral: "#5b6178", bound: "rgba(42, 120, 214, 0.12)" };
+
+    Chart.defaults.color = PREFERS_DARK ? "#a9afc6" : "#5b6178";
+    Chart.defaults.borderColor = PREFERS_DARK ? "rgba(255, 255, 255, 0.08)" : "rgba(16, 18, 30, 0.07)";
+    Chart.defaults.font.family = "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif";
+
     let historyChart = null;
     let historyToken = 0;
 
@@ -120,18 +129,18 @@
                     {
                         label: "PLEXOS",
                         data: [],
-                        borderColor: "#2a78d6",
-                        backgroundColor: "#2a78d6",
-                        borderWidth: 1.5,
+                        borderColor: THEME.blue,
+                        backgroundColor: THEME.blue,
+                        borderWidth: 1.75,
                         pointRadius: 0,
                         tension: 0,
                     },
                     {
                         label: "Emulated",
                         data: [],
-                        borderColor: "#eb6834",
-                        backgroundColor: "#eb6834",
-                        borderWidth: 1.5,
+                        borderColor: THEME.orange,
+                        backgroundColor: THEME.orange,
+                        borderWidth: 1.75,
                         pointRadius: 0,
                         tension: 0,
                     },
@@ -272,7 +281,7 @@
                         pointHitRadius: 0,
                         tension: 0.25,
                         fill: DEMAND_BOUND_IDX.lower,
-                        backgroundColor: "rgba(120, 120, 120, 0.18)",
+                        backgroundColor: THEME.bound,
                     },
                     {
                         label: `-${DEMAND_BOUND_PCT * 100}% bound`,
@@ -287,8 +296,8 @@
                     {
                         label: "Representative",
                         data: [],
-                        borderColor: "#6b6b6b",
-                        backgroundColor: "#6b6b6b",
+                        borderColor: THEME.neutral,
+                        backgroundColor: THEME.neutral,
                         borderWidth: 2,
                         borderDash: [6, 4],
                         pointRadius: 2,
@@ -297,8 +306,8 @@
                     {
                         label: "Modified",
                         data: [],
-                        borderColor: "#2a78d6",
-                        backgroundColor: "#2a78d6",
+                        borderColor: THEME.red,
+                        backgroundColor: THEME.red,
                         borderWidth: 2,
                         pointRadius: 6,
                         pointHitRadius: 14,
@@ -317,8 +326,8 @@
                     {
                         label: "Representative",
                         data: [],
-                        borderColor: "#6b6b6b",
-                        backgroundColor: "#6b6b6b",
+                        borderColor: THEME.neutral,
+                        backgroundColor: THEME.neutral,
                         borderWidth: 2,
                         borderDash: [6, 4],
                         pointRadius: 2,
@@ -327,8 +336,8 @@
                     {
                         label: "Modified",
                         data: [],
-                        borderColor: "#eb6834",
-                        backgroundColor: "#eb6834",
+                        borderColor: THEME.red,
+                        backgroundColor: THEME.red,
                         borderWidth: 2,
                         pointRadius: 3,
                         tension: 0.25,
