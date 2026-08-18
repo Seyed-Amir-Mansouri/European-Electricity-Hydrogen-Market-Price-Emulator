@@ -118,7 +118,7 @@
             data: {
                 datasets: [
                     {
-                        label: "Actual",
+                        label: "PLEXOS",
                         data: [],
                         borderColor: "#2a78d6",
                         backgroundColor: "#2a78d6",
