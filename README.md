@@ -24,7 +24,6 @@ to learn from in the first place, not because the model is undertrained.
   hour-by-hour actual-vs-emulated historical price chart, and a "Future Analysis" panel
   where you drag a zone's typical 24-hour demand curve and see the price curve recompute
   live; `app.bat` launches it and opens your browser automatically
-- Dockerfile for a self-contained, runnable version of the app
 
 ## Why per-zone, and why more than just demand
 
@@ -97,15 +96,6 @@ Dependencies are listed in `requirements.txt`:
 ```bash
 pip install -r requirements.txt
 ```
-
-### Docker
-
-```bash
-docker build -t price-model .
-docker run -p 8000:8000 price-model
-```
-
-Then open `http://localhost:8000`.
 
 ## Usage
 
