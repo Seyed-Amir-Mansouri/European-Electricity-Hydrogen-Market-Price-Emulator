@@ -23,8 +23,8 @@ from price_model.multivariate import train_all
 from price_model.neighbors import load_adjacency
 
 ROOT = Path(__file__).resolve().parent
-INPUTS = ROOT / "inputs"   # pre-built sample parquets ship here (skip build_dataset)
-OUT = ROOT / "outputs"     # trained models + metrics land here
+INPUTS = ROOT / "inputs"
+OUT = ROOT / "outputs"
 
 
 def _metrics_frame(bundle: dict) -> pd.DataFrame:

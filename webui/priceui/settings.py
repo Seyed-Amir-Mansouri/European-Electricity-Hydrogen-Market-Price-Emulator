@@ -8,12 +8,10 @@ level above this ``webui/`` folder), via the ``price_model`` package.
 import sys
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent          # webui/
-REPO_ROOT = BASE_DIR.parent                                 # repo root (holds price_model/)
-sys.path.insert(0, str(REPO_ROOT))                          # make `price_model` importable
+BASE_DIR = Path(__file__).resolve().parent.parent
+REPO_ROOT = BASE_DIR.parent
+sys.path.insert(0, str(REPO_ROOT))
 
-# No auth/DB in this app, so the key only guards Django's CSRF/session machinery, which
-# isn't in use either -- fine to keep a fixed placeholder rather than a managed secret.
 SECRET_KEY = "django-insecure-price-model-webui-local-only"
 
 DEBUG = True
@@ -45,7 +43,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "priceui.wsgi.application"
 
-# No models/ORM usage anywhere in this app.
 DATABASES = {}
 
 LANGUAGE_CODE = "en-us"

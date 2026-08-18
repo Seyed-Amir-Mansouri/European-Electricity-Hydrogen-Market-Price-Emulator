@@ -56,11 +56,11 @@ import pandas as pd
 
 try:
     import openpyxl
-except ImportError as e:  # pragma: no cover
+except ImportError as e:
     raise SystemExit("openpyxl is required: pip install openpyxl") from e
 
 CAT_ROW, CTRY_ROW, FIRST_DATA_ROW = 10, 11, 13
-MAXROWS = 9000  # upper bound on hourly rows (actual ~8736)
+MAXROWS = 9000
 
 DEFAULT_XLSX = (
     Path(__file__).resolve().parent.parent
@@ -154,7 +154,7 @@ def _stream(xlsx_path, sheet, classify, groups, strip_suffix=""):
 def _assemble(zones, nrows, accum, groups, year):
     dt = pd.date_range(f"{year}-01-01", periods=nrows, freq="h")
     month = dt.month.to_numpy()
-    season = (dt.month.to_numpy() % 12) // 3  # 0=DJF winter, 1=MAM spring, 2=JJA summer, 3=SON autumn
+    season = (dt.month.to_numpy() % 12) // 3
     frames = []
     for z in zones:
         d = {g: accum[z][g][:nrows] for g in groups}
@@ -286,7 +286,7 @@ def extract_hydrogen(xlsx_path: str | Path = DEFAULT_XLSX, year: int = 2009,
     return feat
 
 
-if __name__ == "__main__":  # smoke test
+if __name__ == "__main__":
     e = extract_electricity()
     h = extract_hydrogen()
     print("electricity:", e.shape, e["zone"].nunique(), "zones")

@@ -32,22 +32,12 @@ COMMODITIES = {
         "unit": "EUR/MWh",
         "demand": "demand",
         "target": "price_eur_mwh",
-        # demand + net demand (residual_load = demand - wind - solar) for the zone
-        # itself, + weather drivers + calendar/time context, + ens/dumped (energy not
-        # served / curtailed) -- these two are dispatch outcomes like thermal/hydro/
-        # balance below, but they're also the *cause* of scarcity/oversupply pricing
-        # in thin markets (e.g. GE00, MT00 CV R^2 rose from ~0.3-0.4 to >0.9 with
-        # them added), so they're kept in despite the general exclusion. Other
-        # dispatch-outcome features (thermal, hydro, battery, dsr) still excluded.
-        # Neighbour/system-total demand features (both raw and net) are added per
-        # zone on top of this (see `adjacency`/`net_demand_col`).
         "features": ["demand", "residual_load", "wind", "solar", "month", "season", "hour",
                      "ens", "dumped"],
         "samples": "elec_samples.parquet",
         "adjacency": "elec_adjacency.json",
-        "net_demand_col": "residual_load",  # demand - wind - solar, already in the parquet
-        "max_price": 500,  # hours where this zone's own price exceeds this are dropped
-                            # entirely, from both training and CV scoring
+        "net_demand_col": "residual_load",
+        "max_price": 500,
         "model": "electricity_model.joblib",
         "metrics": "electricity_metrics.csv",
     },
@@ -55,17 +45,10 @@ COMMODITIES = {
         "unit": "EUR/MWhH2",
         "demand": "h2_demand",
         "target": "h2_price",
-        # H2 demand (primary) + electrolysis feedstock price + calendar/time context,
-        # + dumped/hns (curtailed H2 / hydrogen not served) -- the H2 analogue of
-        # electricity's ens/dumped above, kept in for the same reason (scarcity/
-        # oversupply pricing signal in thin markets). The rest of the hydrogen
-        # supply-mix / trade features (electrolyser_gen, smr, storage, balance,
-        # h2_net_trade) still intentionally excluded. Neighbour/system-total demand
-        # features are added per zone on top of this (see `adjacency` above).
         "features": ["h2_demand", "elec_price", "month", "season", "hour", "dumped", "hns"],
         "samples": "h2_samples.parquet",
         "adjacency": "h2_adjacency.json",
-        "net_demand_col": None,  # no renewables column for H2 zones -- falls back to h2_demand
+        "net_demand_col": None,
         "model": "hydrogen_model.joblib",
         "metrics": "hydrogen_metrics.csv",
     },

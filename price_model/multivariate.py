@@ -33,7 +33,7 @@ from sklearn.model_selection import KFold, cross_val_predict
 
 from .neighbors import add_candidate_neighbor_prices, add_neighbor_features
 
-MIN_SAMPLES = 200  # a zone needs this many active hours for a stable fit
+MIN_SAMPLES = 200
 
 
 def _new_estimator() -> HistGradientBoostingRegressor:
@@ -64,7 +64,7 @@ def train_zone(df_zone: pd.DataFrame, target: str, features: list[str], demand: 
     y = d[target].to_numpy()
 
     cv_r2, cv_rmse = _cv_scores(X, y)
-    model = _new_estimator().fit(X, y)  # final model on all of the zone's samples
+    model = _new_estimator().fit(X, y)
     perm = permutation_importance(model, X, y, n_repeats=3, random_state=0)
     return {
         "model": model,

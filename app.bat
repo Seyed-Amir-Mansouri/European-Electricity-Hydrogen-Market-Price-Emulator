@@ -1,13 +1,11 @@
 @echo off
 setlocal enabledelayedexpansion
 
-rem Run this script from anywhere; it always operates relative to its own folder.
 cd /d "%~dp0"
 
 set "VENV_DIR=.venv"
 set "PY=%VENV_DIR%\Scripts\python.exe"
 
-rem --- 1&2. Virtual environment + dependencies: skip both entirely if the venv already exists ---
 if exist "%PY%" (
     echo [app.bat] Virtual environment found at %VENV_DIR%, skipping creation and dependency check.
 ) else (
@@ -32,8 +30,6 @@ if exist "%PY%" (
     )
 )
 
-rem --- 3. Trained models: train only if missing. Sample data already ships in inputs/, ---
-rem ---    so build_dataset.py (which regenerates it from the raw workbook) is never run. ---
 set "MODELS_MISSING=0"
 if not exist "outputs\electricity_model.joblib" set "MODELS_MISSING=1"
 if not exist "outputs\hydrogen_model.joblib" set "MODELS_MISSING=1"
@@ -51,8 +47,6 @@ if "%MODELS_MISSING%"=="1" (
     echo [app.bat] Trained models found in outputs\, skipping training.
 )
 
-rem --- 4. Launch the app ---
-rem     Bind to 0.0.0.0 so the app is reachable over LAN/Tailscale, not just localhost.
 echo [app.bat] Starting Django app at http://127.0.0.1:8000/ (also reachable on your LAN/Tailscale IP) ...
 start "" "http://127.0.0.1:8000/"
 "%PY%" webui\manage.py runserver 0.0.0.0:8000
